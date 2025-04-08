@@ -46,7 +46,7 @@ def delete(todo_id):
     return redirect(url_for("home"))
 
 
-@app.cli.command("init-db")
+@app.cli.command("init_db")
 def init_db():
     """Initialize the database."""
     db.create_all()
