@@ -36,7 +36,7 @@ OK
 ```
 # Running a specific test
 
-This example runs all tests matching the name "basic":
+This example runs a single test in the class TodoTestCase, with the name "test_home"
 
 ```sh
 ./build_docker.sh my_app
