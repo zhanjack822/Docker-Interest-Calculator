@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DOCKER_TAG=${1:-test-python-pip-flask}
-DOCKER_DEFAULT_PLATFORM=linux/amd64
+DOCKER_TAG=${1:-my-app}
+DOCKER_DEFAULT_PLATFORM=${2:-linux/amd64}
 
-docker build -t $DOCKER_TAG .
+docker build --platform $DOCKER_DEFAULT_PLATFORM -t $DOCKER_TAG .
