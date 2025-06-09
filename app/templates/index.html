@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Loan Calculator</h1>
+<form method="post" action="/loan">
+    <label>Principal:</label>
+    <input name="principal" type="number" step="any" required><br>
+    <label>Rate (%):</label>
+    <input name="rate" type="number" step="any" required><br>
+    <label>Years:</label>
+    <input name="years" type="number" step="1" required><br>
+    <input type="submit" value="Calculate Loan">
+</form>
+
+<h1>Savings Calculator</h1>
+<form method="post" action="/savings">
+    <label>Initial Amount:</label>
+    <input name="initial" type="number" step="any" required><br>
+    <label>Monthly Contribution:</label>
+    <input name="monthly" type="number" step="any" required><br>
+    <label>Rate (%):</label>
+    <input name="rate" type="number" step="any" required><br>
+    <label>Years:</label>
+    <input name="years" type="number" step="1" requir

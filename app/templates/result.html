@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ result.type }} Result</h2>
+<ul>
+{% for key, value in result.items() if key != 'type' %}
+    <li><strong>{{ key.replace("_", " ").title() }}</strong>: {{ value }}</li>
+{% endfor %}
+</ul>
+<a href="/">Back</a>
+{% endblock %}
