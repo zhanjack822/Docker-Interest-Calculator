@@ -110,7 +110,7 @@ class TestCalculations(unittest.TestCase):
 
         # Assume the new function signature includes a daily_rate input and flag
         calculated = calculate_savings_future_value(
-            initial, monthly_contrib, daily_rate_percent, years, rate_type='daily'
+            initial, monthly_contrib, daily_rate_percent, years, 'daily'
         )
         self.assertAlmostEqual(calculated, future_value, places=2)
 
