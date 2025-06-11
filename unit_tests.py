@@ -3,6 +3,9 @@ from app.calculations import calculate_loan_payment, calculate_savings_future_va
 
 class TestCalculations(unittest.TestCase):
     def test_loan_regular(self):
+        """
+        Ensure `calculate_loan_payment` returns correct output for a non-zero principal and annual interest rate
+        """
         # calculate correct interest
         principal = 10000
         years = 5
@@ -20,7 +23,9 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(total_interest, correct_total_interest, places=2)
 
     def test_loan_zero_interest(self):
-
+        """
+        Ensure `calculate_loan_payment` returns correct output for a non-zero principal and zero annual interest
+        """
 
         # calculate correct interest
         principal = 12000
@@ -38,6 +43,11 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(total_interest, correct_total_interest, places=2)
 
     def test_savings_regular(self):
+        """
+        Ensure `calculate_savings_future_value` returns correct value for non-zero initial, monthly installments, and
+        annual interest rate.
+        """
+
         # correct savings calculation
         initial = 1000
         monthly = 100
@@ -54,6 +64,11 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(calculated_savings, final, places=2)
 
     def test_savings_zero_rate(self):
+        """
+        Ensure `calculate_savings_future_value` returns correct value for non-zero initial and monthly installments but
+        with zero compounding growth
+        """
+
         # correct savings calculation
         initial = 1000
         monthly = 100
