@@ -5,20 +5,17 @@ import os
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
             static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
-# check where other directories are
-print("Current working dir:", os.getcwd())
-print("Contents of working dir:", os.listdir())
-print("Full path contents of working dir:")
-for item in os.listdir():
-    print(" -", os.path.abspath(item))
-templates_path = os.path.join(os.path.dirname(__file__), 'templates')
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/loan', methods=['POST'])
-def loan():
+def loan() -> str:
+    """
+    Renders the Loan calculator
+    :return: updated html with loan calculator
+    """
+
     principal = float(request.form['principal'])
     rate = float(request.form['rate'])
     years = int(request.form['years'])
@@ -33,7 +30,12 @@ def loan():
     })
 
 @app.route('/savings', methods=['POST'])
-def savings():
+def savings() -> str:
+    """
+    Renders savings calculator
+    :return: updated html with savings calculator
+    """
+
     initial = float(request.form['initial'])
     monthly = float(request.form['monthly'])
     rate = float(request.form['rate'])
