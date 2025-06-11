@@ -43,6 +43,13 @@ This example runs a single test in the class TodoTestCase, with the name `test_s
 docker run -t my_app bash ./run_tests.sh test_savings_zero_rate
 ```
 
+# Running the Image
+If you want to run the image to ensure the app works inside the Docker image environment and test the output on a web 
+browser,
+```shell
+docker run --rm -p 5000:5000 my_app
+```
+
 [comment]: <> # Running a flask dev server
 
 [comment]: <> Run this command to enable hot reloading via docker.
