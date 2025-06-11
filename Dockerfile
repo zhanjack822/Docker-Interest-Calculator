@@ -9,6 +9,9 @@ COPY . .
 # Install dependencies
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
+# Make test script executable
+RUN chmod +x /app/run_tests.sh
+
 # Set environment variables
 ENV FLASK_APP=app.app
 ENV FLASK_RUN_HOST=0.0.0.0
