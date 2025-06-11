@@ -1,7 +1,17 @@
 from flask import Flask, render_template, request
-from calculations import calculate_loan_payment, calculate_savings_future_value
+from .calculations import calculate_loan_payment, calculate_savings_future_value
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
+            static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
+# check where other directories are
+print("Current working dir:", os.getcwd())
+print("Contents of working dir:", os.listdir())
+print("Full path contents of working dir:")
+for item in os.listdir():
+    print(" -", os.path.abspath(item))
+templates_path = os.path.join(os.path.dirname(__file__), 'templates')
 
 @app.route('/')
 def index():
