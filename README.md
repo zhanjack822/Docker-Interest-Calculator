@@ -6,7 +6,7 @@ This command builds a docker image with the code of this repository and runs the
 
 ```sh
 ./build_docker.sh my_app
-docker run -t my_app ./run_tests.sh
+docker run -t my_app bash ./run_tests.sh
 ```
 
 ```
@@ -36,19 +36,19 @@ OK
 ```
 # Running a specific test
 
-This example runs a single test in the class TodoTestCase, with the name "test_home"
+This example runs a single test in the class TodoTestCase, with the name `test_savings_zero_rate`
 
 ```sh
 ./build_docker.sh my_app
-docker run -t my_app ./run_tests.sh TodoTestCase.test_home
+docker run -t my_app bash ./run_tests.sh test_savings_zero_rate
 ```
 
-# Running a flask dev server
+[comment]: <> # Running a flask dev server
 
-Run this command to enable hot reloading via docker.
+[comment]: <> Run this command to enable hot reloading via docker.
 
-```sh
-./build_docker.sh my_app
-docker run --network=host -v .:/app -t my_app flask init_db
-docker run --network=host -v .:/app -t my_app flask run
-```
+[comment]: <>```sh
+[comment]: <>./build_docker.sh my_app
+[comment]: <>docker run --network=host -v .:/app -t my_app flask init_db
+[comment]: <>docker run --network=host -v .:/app -t my_app flask run
+[comment]: <>```
