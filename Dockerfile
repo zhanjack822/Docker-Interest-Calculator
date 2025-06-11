@@ -1,6 +1,21 @@
-FROM python:3.13.2-alpine3.21@sha256:323a717dc4a010fee21e3f1aac738ee10bb485de4e7593ce242b36ee48d6b352
+FROM python:3.13.2-slim
+
+# Set working directory inside the container
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy dependencies file first (leverages Docker cache)
 COPY . .
-CMD ["sh"]
+
+# Install dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Set environment variables
+ENV FLASK_APP=app.app
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_ENV=development
+
+# Expose the port Flask will run on
+EXPOSE 5000
+
+# Default command to start the Flask app
+CMD ["flask", "run"]
