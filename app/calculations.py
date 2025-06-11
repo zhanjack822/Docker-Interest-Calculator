@@ -26,7 +26,7 @@ def calculate_savings_future_value(initial: float, monthly: float, comp_rate: fl
 
     :param float initial: initial savings amount
     :param float monthly: monthly contribution
-    :param float comp_rate: compounding rate as a percentage
+    :param float comp_rate: annual compounding rate as a percentage
     :param int years: savings period in years
     :return: total value of savings at the end of the savings period
     """
