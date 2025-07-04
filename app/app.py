@@ -40,8 +40,9 @@ def savings() -> str:
     monthly = float(request.form['monthly'])
     rate = float(request.form['rate'])
     years = int(request.form['years'])
+    compounding_period = request.form['compounding_period']
 
-    future_value = calculate_savings_future_value(initial, monthly, rate, years)
+    future_value = calculate_savings_future_value(initial, monthly, rate, years, compounding_period)
 
     return render_template('result.html', result={
         "type": "Savings",

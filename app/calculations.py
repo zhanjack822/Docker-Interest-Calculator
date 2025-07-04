@@ -19,21 +19,53 @@ def calculate_loan_payment(principal: float, annual_rate: float, years: int) -> 
     total_interest = total_paid - principal
     return monthly_payment, total_paid, total_interest
 
-def calculate_savings_future_value(initial: float, monthly: float, comp_rate: float, years: int) -> float:
+
+def calculate_savings_future_value(initial: float, monthly: float, comp_rate: float, years: int,
+                                   compounding_period: str = 'yearly') -> float:
     """
     Calculate total savings in a savings account with some initial amount saved, a fixed monthly contributions, some
     fixed annual compounding rate, and the savings period.
 
     :param float initial: initial savings amount
     :param float monthly: monthly contribution
-    :param float comp_rate: annual compounding rate as a percentage
+    :param float comp_rate: compounding rate as a percentage
     :param int years: savings period in years
+    :param str compounding_period: period of compounding ('daily', 'monthly', or 'yearly')
     :return: total value of savings at the end of the savings period
     """
 
     months = years * 12
-    monthly_rate = comp_rate / 100 / 12
-    future_value = initial * (1 + monthly_rate) ** months
-    for m in range(months):
-        future_value += monthly * (1 + monthly_rate) ** (months - m - 1)
+
+    if compounding_period == 'monthly':
+        monthly_rate = comp_rate / 100
+
+        # Compound the initial deposit daily
+        future_value = initial * (1 + monthly_rate) ** months
+
+        # Add compounded monthly contributions (each made once per month)
+        for m in range(months):
+            future_value += monthly * (1 + monthly_rate) ** (months - m - 1)
+
+    elif compounding_period == 'daily':
+        days_per_month = 365 / 12
+        total_days = days_per_month * months
+
+        daily_rate = comp_rate / 100
+
+        # Compound the initial deposit daily
+        future_value = initial * (1 + daily_rate) ** total_days
+
+        # Add compounded monthly contributions (each made once per month)
+        for m in range(months):
+            days_remaining = total_days - ((m + 1) * days_per_month)
+            future_value += monthly * (1 + daily_rate) ** days_remaining
+
+    else:
+        # default to yearly compounding rate
+        monthly_rate = comp_rate / 100 / 12
+        future_value = initial * (1 + monthly_rate) ** months
+        for m in range(months):
+            future_value += monthly * (1 + monthly_rate) ** (months - m - 1)
+
+
     return future_value

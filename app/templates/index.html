@@ -20,6 +20,12 @@
     <input name="monthly" type="number" step="any" required><br>
     <label>Rate (%):</label>
     <input name="rate" type="number" step="any" required><br>
+    <label>Compounding Period:</label>
+    <select name="compounding_period">
+        <option value="yearly">Yearly</option>
+        <option value="monthly">Monthly</option>
+        <option value="daily">Daily</option>
+    </select><br>
     <label>Years:</label>
     <input name="years" type="number" step="1" required><br>
     <input type="submit" value="Calculate Savings">
