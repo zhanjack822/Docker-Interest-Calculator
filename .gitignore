@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# zipped project folder
+*.zip
+
+# docker validator
+Validator/
