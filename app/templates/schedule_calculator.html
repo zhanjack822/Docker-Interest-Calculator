@@ -2,9 +2,312 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Schedule Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .node {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+        }
+        .node h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-green:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-blue {
+            background-color: #007bff;
+            color: white;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .time-inputs input {
+            flex: 1;
+        }
+        .back-btn {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
+    <a href="/" class="back-btn">← Back to Calculator</a>
 
+    <h1>Payment Schedule Calculator</h1>
+    <p>Original Loan: ${{ "%.2f"|format(loan_data.principal) }} at {{ "%.2f"|format(loan_data.rate) }}% for {{ loan_data.years }} years</p>
+    <p>Standard Monthly Payment: ${{ "%.2f"|format(loan_data.monthly_payment) }}</p>
+
+    <div id="nodes-container">
+        <!-- Nodes will be dynamically added here -->
+    </div>
+
+    <script>
+        let nodeCount = 0;
+        const maxNodes = 3;
+        const loanData = {{ loan_data | tojson }};
+        let nodesData = [];
+
+        function createNode(nodeIndex, defaultPayment, remainingPrincipal) {
+            const nodeId = `node-${nodeIndex}`;
+            const nodeHtml = `
+                <div class="node" id="${nodeId}">
+                    <h3>Payment Period ${nodeIndex + 1}</h3>
+
+                    <div class="input-group">
+                        <label>Monthly Payment Amount ($):</label>
+                        <input type="number" step="0.01" value="${defaultPayment.toFixed(2)}"
+                               id="payment-${nodeIndex}" onchange="resetNode(${nodeIndex})">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Time to Pay Off Remaining Loan:</label>
+                        <textarea id="payoff-time-${nodeIndex}" readonly
+                                  placeholder="Click 'Calculate Loan Period' to see results"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-green" onclick="calculateLoanPeriod(${nodeIndex})">
+                            Calculate Loan Period
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Payment Period Duration:</label>
+                        <div class="time-inputs">
+                            <input type="number" min="0" placeholder="Years"
+                                   id="years-${nodeIndex}" disabled onchange="resetCalculation(${nodeIndex})">
+                            <input type="number" min="0" max="11" placeholder="Months"
+                                   id="months-${nodeIndex}" disabled onchange="resetCalculation(${nodeIndex})">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Payment Period Results:</label>
+                        <textarea id="results-${nodeIndex}" readonly
+                                  placeholder="Enter payment period and click 'Calculate Payments Made'"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-green" id="calc-payments-${nodeIndex}"
+                                onclick="calculatePayments(${nodeIndex})" disabled>
+                            Calculate Payments Made
+                        </button>
+                        <button class="btn btn-blue" id="add-node-${nodeIndex}"
+                                onclick="addNewNode(${nodeIndex})" disabled>
+                            Add New Payment Period
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('nodes-container').insertAdjacentHTML('beforeend', nodeHtml);
+
+            nodesData[nodeIndex] = {
+                remainingPrincipal: remainingPrincipal,
+                totalPayments: nodeIndex === 0 ? 0 : nodesData[nodeIndex - 1].totalPayments,
+                totalInterest: nodeIndex === 0 ? 0 : nodesData[nodeIndex - 1].totalInterest
+            };
+        }
+
+        function resetNode(nodeIndex) {
+            document.getElementById(`payoff-time-${nodeIndex}`).value = '';
+            document.getElementById(`years-${nodeIndex}`).disabled = true;
+            document.getElementById(`months-${nodeIndex}`).disabled = true;
+            document.getElementById(`years-${nodeIndex}`).value = '';
+            document.getElementById(`months-${nodeIndex}`).value = '';
+            resetCalculation(nodeIndex);
+        }
+
+        function resetCalculation(nodeIndex) {
+            document.getElementById(`results-${nodeIndex}`).value = '';
+            document.getElementById(`calc-payments-${nodeIndex}`).disabled = true;
+            document.getElementById(`add-node-${nodeIndex}`).disabled = true;
+        }
+
+        async function calculateLoanPeriod(nodeIndex) {
+            const payment = parseFloat(document.getElementById(`payment-${nodeIndex}`).value);
+            const remainingPrincipal = nodesData[nodeIndex].remainingPrincipal;
+
+            try {
+                const response = await fetch('/calculate-loan-period', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        remaining_principal: remainingPrincipal,
+                        annual_rate: loanData.rate,
+                        monthly_payment: payment
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.years >= 999) {
+                    document.getElementById(`payoff-time-${nodeIndex}`).value =
+                        'Payment too small to cover interest. Loan will never be paid off.';
+                } else {
+                    document.getElementById(`payoff-time-${nodeIndex}`).value =
+                        `${result.years} years and ${result.months} months`;
+                }
+
+                // Enable time input fields
+                document.getElementById(`years-${nodeIndex}`).disabled = false;
+                document.getElementById(`months-${nodeIndex}`).disabled = false;
+
+            } catch (error) {
+                console.error('Error calculating loan period:', error);
+                alert('Error calculating loan period. Please try again.');
+            }
+        }
+
+        async function calculatePayments(nodeIndex) {
+            const payment = parseFloat(document.getElementById(`payment-${nodeIndex}`).value);
+            const years = parseInt(document.getElementById(`years-${nodeIndex}`).value) || 0;
+            const months = parseInt(document.getElementById(`months-${nodeIndex}`).value) || 0;
+            const totalMonths = years * 12 + months;
+
+            if (totalMonths <= 0) {
+                alert('Please enter a valid payment period.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/calculate-scheduled-payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        remaining_principal: nodesData[nodeIndex].remainingPrincipal,
+                        annual_rate: loanData.rate,
+                        monthly_payment: payment,
+                        previous_total_payments: nodesData[nodeIndex].totalPayments,
+                        previous_interest_paid: nodesData[nodeIndex].totalInterest,
+                        payment_period_months: totalMonths
+                    })
+                });
+
+                const result = await response.json();
+
+                const periodPayments = result.total_payments - nodesData[nodeIndex].totalPayments;
+                const periodInterest = result.total_interest - nodesData[nodeIndex].totalInterest;
+
+                document.getElementById(`results-${nodeIndex}`).value =
+                    `Total payments this period: $${periodPayments.toFixed(2)}\n` +
+                    `Total interest paid so far: $${result.total_interest.toFixed(2)}\n` +
+                    `Remaining principal: $${result.remaining_principal.toFixed(2)}`;
+
+                // Update node data for next node
+                nodesData[nodeIndex].totalPayments = result.total_payments;
+                nodesData[nodeIndex].totalInterest = result.total_interest;
+                nodesData[nodeIndex].finalPrincipal = result.remaining_principal;
+
+                // Enable add node button if loan isn't paid off and we haven't reached max nodes
+                if (result.remaining_principal > 0.01 && nodeCount < maxNodes) {
+                    document.getElementById(`add-node-${nodeIndex}`).disabled = false;
+                }
+
+            } catch (error) {
+                console.error('Error calculating payments:', error);
+                alert('Error calculating payments. Please try again.');
+            }
+        }
+
+        function addNewNode(currentNodeIndex) {
+            if (nodeCount >= maxNodes) {
+                alert('Maximum of 3 payment periods allowed.');
+                return;
+            }
+
+            const currentPayment = parseFloat(document.getElementById(`payment-${currentNodeIndex}`).value);
+            const remainingPrincipal = nodesData[currentNodeIndex].finalPrincipal;
+
+            if (remainingPrincipal <= 0.01) {
+                alert('Loan is already paid off.');
+                return;
+            }
+
+            nodeCount++;
+            createNode(nodeCount, currentPayment, remainingPrincipal);
+
+            // Disable the add button for the current node
+            document.getElementById(`add-node-${currentNodeIndex}`).disabled = true;
+        }
+
+        // Initialize first node
+        document.addEventListener('DOMContentLoaded', function() {
+            createNode(0, loanData.monthly_payment, loanData.principal);
+            nodeCount = 0;
+
+            // Enable years/months inputs when user changes them
+            document.addEventListener('input', function(e) {
+                if (e.target.id.includes('years-') || e.target.id.includes('months-')) {
+                    const nodeIndex = e.target.id.split('-')[1];
+                    const years = parseInt(document.getElementById(`years-${nodeIndex}`).value) || 0;
+                    const months = parseInt(document.getElementById(`months-${nodeIndex}`).value) || 0;
+
+                    if (years > 0 || months > 0) {
+                        document.getElementById(`calc-payments-${nodeIndex}`).disabled = false;
+                    } else {
+                        document.getElementById(`calc-payments-${nodeIndex}`).disabled = true;
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

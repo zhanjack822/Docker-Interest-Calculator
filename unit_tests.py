@@ -1,7 +1,7 @@
 from app.calculations import (calculate_loan_payment, calculate_savings_future_value,
                               calculate_loan_period, calculate_scheduled_payments)
 import unittest
-import numpy as np
+from math import log as ln, ceil, floor
 
 
 class TestCalculations(unittest.TestCase):
@@ -21,9 +21,9 @@ class TestCalculations(unittest.TestCase):
 
         # obtain our function's output
         monthly_payments, total_payment, total_interest = calculate_loan_payment(principal, annual, years)
-        self.assertAlmostEqual(monthly_payments, correct_monthly_payment, places=2)
-        self.assertAlmostEqual(total_payment, correct_total_payment, places=2)
-        self.assertAlmostEqual(total_interest, correct_total_interest, places=2)
+        self.assertAlmostEqual(correct_monthly_payment, monthly_payments, places=2)
+        self.assertAlmostEqual(correct_total_payment, total_payment, places=2)
+        self.assertAlmostEqual(correct_total_interest, total_interest, places=2)
 
     def test_loan_zero_interest(self):
         """
@@ -41,9 +41,9 @@ class TestCalculations(unittest.TestCase):
 
         # obtain our function's output
         monthly_payments, total_payment, total_interest = calculate_loan_payment(principal, annual, years)
-        self.assertAlmostEqual(monthly_payments, correct_monthly_payment, places=2)
-        self.assertAlmostEqual(total_payment, correct_total_payment, places=2)
-        self.assertAlmostEqual(total_interest, correct_total_interest, places=2)
+        self.assertAlmostEqual(correct_monthly_payment, monthly_payments, places=2)
+        self.assertAlmostEqual(correct_total_payment, total_payment, places=2)
+        self.assertAlmostEqual(correct_total_interest, total_interest, places=2)
 
     def test_savings_zero_rate(self):
         """
@@ -64,7 +64,7 @@ class TestCalculations(unittest.TestCase):
             future_value += monthly * (1 + monthly_interest) ** (months - m - 1)
 
         calculated_savings = calculate_savings_future_value(initial, monthly, annual, years)
-        self.assertAlmostEqual(calculated_savings, future_value, places=2)
+        self.assertAlmostEqual(future_value, calculated_savings, places=2)
 
     def test_savings_yearly(self):
         """
@@ -85,7 +85,7 @@ class TestCalculations(unittest.TestCase):
             future_value += monthly * (1 + monthly_interest) ** (months - m - 1)
 
         calculated_savings = calculate_savings_future_value(initial, monthly, annual, years)
-        self.assertAlmostEqual(calculated_savings, future_value, places=2)
+        self.assertAlmostEqual(future_value, calculated_savings, places=2)
 
     def test_savings_daily_rate_input(self):
         """
@@ -114,7 +114,7 @@ class TestCalculations(unittest.TestCase):
         calculated = calculate_savings_future_value(
             initial, monthly_contrib, daily_rate * 100, years, 'daily')
 
-        self.assertAlmostEqual(calculated, future_value, places=2)
+        self.assertAlmostEqual(future_value, calculated, places=2)
 
     def test_savings_monthly_rate_input(self):
         """
@@ -139,7 +139,7 @@ class TestCalculations(unittest.TestCase):
         calculated = calculate_savings_future_value(
             initial, monthly_contrib, monthly_rate * 100, years, 'monthly')
 
-        self.assertAlmostEqual(calculated, future_value, places=2)
+        self.assertAlmostEqual(future_value, calculated, places=2)
 
     def test_loan_period_calculator(self):
         """
@@ -154,15 +154,39 @@ class TestCalculations(unittest.TestCase):
         monthly_payment = 195.66
 
         # calculate correct values to test against
-        payment_periods = (np.log(monthly_payment / monthly_payment - principal * monthly_rate) /
-                           np.log(1 + monthly_rate))
-        years_remaining = np.floor(payment_periods / 12)
-        months_remaining = payment_periods % 12
+        payment_periods = (ln(monthly_payment / (monthly_payment - principal * monthly_rate)) /
+                           ln(1 + monthly_rate))
+        years_remaining = floor(payment_periods / 12)
+        months_remaining = ceil(payment_periods % 12)
         correct_output = (years_remaining, months_remaining)
 
         # compare against function output
         trial_output = calculate_loan_period(principal, yearly_rate, monthly_payment)
-        self.assertEqual(trial_output, correct_output)
+        self.assertEqual(correct_output, trial_output)
+
+
+    def test_payed_off_loan_period_calculator(self):
+        """
+        Test that `calculate_loan_period` returns correct value when the loan is fully paid off
+        :return:
+        """
+
+        # loan parameters
+        principal = 0
+        yearly_rate = 6.5  # as a percentage
+        monthly_rate = yearly_rate / 100 / 12  # as a decimal
+        monthly_payment = 195.66
+
+        # calculate correct values to test against
+        payment_periods = (ln(monthly_payment / (monthly_payment - principal * monthly_rate)) /
+                           ln(1 + monthly_rate))
+        years_remaining = floor(payment_periods / 12)
+        months_remaining = ceil(payment_periods % 12)
+        correct_output = (years_remaining, months_remaining)
+
+        # compare against function output
+        trial_output = calculate_loan_period(principal, yearly_rate, monthly_payment)
+        self.assertEqual(correct_output, trial_output)
 
     def test_calculate_scheduled_payments(self):
         """
@@ -181,8 +205,8 @@ class TestCalculations(unittest.TestCase):
         remaining_principal = principal
         previous_payment = 0
         previous_interest = 0
-        total_payment = previous_payment + remaining_principal
-        total_interest = previous_interest + remaining_principal
+        payments_made = 0
+        interest_paid = 0
         for i in range(months):
             interest = remaining_principal * monthly_rate
             principal_payment = monthly_payment - interest
@@ -190,8 +214,8 @@ class TestCalculations(unittest.TestCase):
             if principal_payment <= remaining_principal:
                 remaining_principal -= principal_payment
 
-                total_payment += monthly_payment
-                total_interest += interest
+                payments_made += monthly_payment
+                interest_paid += interest
 
             else:
                 # adjust final payment if there is a potential for an overpayment
@@ -199,14 +223,116 @@ class TestCalculations(unittest.TestCase):
                 final_payment = principal_payment + interest
                 remaining_principal -= principal_payment
 
-                total_payment += final_payment
-                total_interest += interest
+                payments_made += final_payment
+                interest_paid += interest
                 break
 
-        correct_output = (total_payment, total_interest, remaining_principal)
-        trial_output = calculate_scheduled_payments(remaining_principal, monthly_rate, monthly_payment,
+        total_payment = previous_payment + payments_made
+        total_interest = previous_interest + interest_paid
+
+        correct_output = (total_payment, total_interest, principal - (payments_made - interest_paid))
+        trial_output = calculate_scheduled_payments(principal, yearly_rate, monthly_payment,
                                                     previous_payment, previous_interest, months)
-        self.assertEqual(trial_output, correct_output)
+        for i in range(3):
+            self.assertAlmostEqual(correct_output[i], trial_output[i])
+
+    def test_calculate_overextended_scheduled_payments(self):
+        """
+        Test that `calculate_scheduled_payments` returns correct value when payment period is too long
+        :return:
+        """
+
+        # loan and payment parameters
+        principal = 10000
+        yearly_rate = 6.5
+        monthly_rate = yearly_rate / 100 / 12
+        monthly_payment = 195.66
+        months = 70
+
+        # calculate correct values to test against
+        remaining_principal = principal
+        previous_payment = 0
+        previous_interest = 0
+        payments_made = 0
+        interest_paid = 0
+        for i in range(months):
+            interest = remaining_principal * monthly_rate
+            principal_payment = monthly_payment - interest
+
+            if principal_payment <= remaining_principal:
+                remaining_principal -= principal_payment
+
+                payments_made += monthly_payment
+                interest_paid += interest
+
+            else:
+                # adjust final payment if there is a potential for an overpayment
+                principal_payment = remaining_principal
+                final_payment = principal_payment + interest
+                remaining_principal -= principal_payment
+
+                payments_made += final_payment
+                interest_paid += interest
+                break
+
+        total_payment = previous_payment + payments_made
+        total_interest = previous_interest + interest_paid
+
+        correct_output = (total_payment, total_interest, principal - (payments_made - interest_paid))
+        trial_output = calculate_scheduled_payments(principal, yearly_rate, monthly_payment,
+                                                    previous_payment, previous_interest, months)
+        for i in range(3):
+            self.assertAlmostEqual(correct_output[i], trial_output[i])
+
+
+    def test_calculate_scheduled_overpayment(self):
+        """
+        Test that `calculate_scheduled_payments` returns correct value when there is an overpayment in the
+        second month
+        :return:
+        """
+
+        # loan and payment parameters
+        principal = 194.71
+        yearly_rate = 6.5
+        monthly_rate = yearly_rate / 100 / 12
+        monthly_payment = 195.66
+        months = 10
+
+        # calculate correct values to test against
+        remaining_principal = principal
+        previous_payment = 11543.94
+        previous_interest = 1738.65
+        payments_made = 0
+        interest_paid = 0
+        for i in range(months):
+            interest = remaining_principal * monthly_rate
+            principal_payment = monthly_payment - interest
+
+            if principal_payment <= remaining_principal:
+                remaining_principal -= principal_payment
+
+                payments_made += monthly_payment
+                interest_paid += interest
+
+            else:
+                # adjust final payment if there is a potential for an overpayment
+                principal_payment = remaining_principal
+                final_payment = principal_payment + interest
+                remaining_principal -= principal_payment
+
+                payments_made += final_payment
+                interest_paid += interest
+                break
+
+        total_payment = previous_payment + payments_made
+        total_interest = previous_interest + interest_paid
+
+        correct_output = (total_payment, total_interest, principal - (payments_made - interest_paid))
+        trial_output = calculate_scheduled_payments(principal, yearly_rate, monthly_payment,
+                                                    previous_payment, previous_interest, months)
+        for i in range(3):
+            self.assertAlmostEqual(correct_output[i], trial_output[i])
 
 
 

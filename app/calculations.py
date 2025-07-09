@@ -1,3 +1,4 @@
+from math import log as ln, ceil, floor
 def calculate_loan_payment(principal: float, annual_rate: float, years: int) -> tuple[float, float, float]:
     """
     Calculate the monthly payment, total amount paid, and total interest payments on a loan with a given principal,
@@ -69,3 +70,70 @@ def calculate_savings_future_value(initial: float, monthly: float, comp_rate: fl
 
 
     return future_value
+
+
+def calculate_loan_period(remaining_principal: float, annual_rate: float, monthly_payment: float) -> tuple[int, int]:
+    """
+    Calculate the time needed to pay off a loan given the remaining principal, annual interest rate, and monthly payment.
+
+    :param float remaining_principal: remaining principal amount
+    :param float annual_rate: annual interest rate as a percentage
+    :param float monthly_payment: monthly payment amount
+    :return: tuple containing years and months needed to pay off the loan
+    """
+    if remaining_principal <= 0:
+        return (0, 0)
+
+    monthly_rate = annual_rate / 100 / 12
+
+    if monthly_rate == 0:
+        payment_periods = remaining_principal / monthly_payment
+        years_remaining = floor(payment_periods / 12)
+        months_remaining = floor(payment_periods % 12)
+    else:
+        # calculate correct values to test against
+        payment_periods = (ln(monthly_payment / (monthly_payment - remaining_principal * monthly_rate)) /
+                           ln(1 + monthly_rate))
+        years_remaining = floor(payment_periods / 12)
+        months_remaining = ceil(payment_periods % 12)
+
+    return (years_remaining, months_remaining)
+
+
+def calculate_scheduled_payments(remaining_principal: float, annual_rate: float, monthly_payment: float,
+                                 previous_total_payments: float, previous_interest_paid: float,
+                                 payment_period_months: int) -> tuple[float, float, float]:
+    """
+    Calculate scheduled payments for a specific period.
+
+    :param float remaining_principal: remaining principal amount
+    :param float annual_rate: annual interest rate as a percentage
+    :param float monthly_payment: monthly payment amount
+    :param float previous_total_payments: total payments made in previous periods
+    :param float previous_interest_paid: total interest paid in previous periods
+    :param int payment_period_months: duration of payment period in months
+    :return: tuple containing total payments made during period, total interest paid thus far, and remaining principal
+    """
+    monthly_rate = annual_rate / 100 / 12
+    current_principal = remaining_principal
+    period_payments = 0
+    period_interest = 0
+
+    for month in range(payment_period_months):
+        if current_principal <= 0:
+            break
+
+        interest_payment = current_principal * monthly_rate
+        principal_payment = min(monthly_payment - interest_payment, current_principal)
+
+        period_payments += interest_payment + principal_payment
+        period_interest += interest_payment
+        current_principal -= principal_payment
+
+        if current_principal <= 0:
+            break
+
+    total_payments_so_far = previous_total_payments + period_payments
+    total_interest_so_far = previous_interest_paid + period_interest
+
+    return (total_payments_so_far, total_interest_so_far, current_principal)

@@ -8,4 +8,12 @@
 {% endfor %}
 </ul>
 <a href="/">Back</a>
+
+{% if result.type == "Loan" %}
+<script>
+    // Set a session storage flag indicating loan calculation is complete
+    sessionStorage.setItem('loanCalculated', 'true');
+</script>
+{% endif %}
+
 {% endblock %}
